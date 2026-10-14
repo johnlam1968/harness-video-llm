@@ -105,3 +105,51 @@ The profile override already in `~/.dsh/profiles/{docdrift,web}/cordis.patch.yml
 `reasoningEfforts: low|medium|high|xhigh|max` with no `off`, which matches the measurement.
 What is unverified is whether that override can carry `compat.forceAdaptiveThinking`, and
 whether thinking reaches the Web GUI without the known inline `<think>` duplication.
+
+---
+
+## 4. Prompt caching on each endpoint (2026-10-14)
+
+`pi-minimax-m3-caching-fix` exists because its author measured that M3's
+`/anthropic/v1/messages` "ignores `cache_control` markers, so every turn was billed at the
+full input price ($0.60/Mtok) instead of the cache-read price ($0.12/Mtok)", and that M3
+supports passive caching on `/v1/chat/completions`. Measured on `api.minimaxi.com`, 3 turns:
+
+| turn | Anthropic `/anthropic/v1/messages` | | | OpenAI `/v1/chat/completions` | |
+|---|---|---|---|---|---|
+| | input | cache_read | **cache_create** | prompt | cached |
+|---|---|---|---|---|---|
+| 1 | 2843 | 128 | **0** | 2978 | 163 |
+| 2 | 15 | 2971 | **0** | 2993 | 2977 |
+| 3 | 1 | 2985 | **0** | 3008 | 2992 |
+
+**The Anthropic route caches.** Turn 2 is a 99% cache read. The extension's premise — that
+M3 bills full input price every turn on `/anthropic` — does not reproduce.
+
+But `cache_creation_input_tokens` is **0 on every turn**, which is the tell: the marker never
+created the cache. The cache is created server-side, by content, without being asked. This
+matches hermes-agent PR [#84404](https://github.com/NousResearch/hermes-agent/pull/84404)
+(merged 2026-08-12) exactly:
+
+> M3 ships server-side automatic prefix caching (content-keyed, no marker needed); explicit
+> `cache_control` is documented for M2.7/M2.5/M2.1/M2 only, so markers on M3 were dead
+> weight: never observable (`cache_creation_input_tokens` always 0), never billable.
+
+So there was never a caching bug on M3's Anthropic route. The marker was inert; the caching
+was automatic either way. PR #17333 (closed) had enabled markers for M2.x, which MiniMax does
+document.
+
+## 5. Inline `<think>` duplication is an OpenAI-wire artifact
+
+Raw SSE scan for literal `<think>` / `</think>`, same prompt, same model:
+
+| route | raw stream | inline `<think>` |
+|---|---|---|
+| `/anthropic/v1/messages` | 8,055 B | **0** |
+| `/v1/chat/completions` | 47,732 B | **2** |
+
+The Anthropic wire has a first-class `thinking` block, so MiniMax uses it. The OpenAI wire has
+no such block type, so MiniMax inlines the reasoning into `content`. **The duplication the
+extension spends ~300 lines removing (a `ThinkScanner`, merged-block dedup, deferred
+`text_start`) is caused by the endpoint it routes to in order to fix a caching problem that
+was not occurring.**
