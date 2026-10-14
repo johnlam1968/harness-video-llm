@@ -1,0 +1,18 @@
+node_modules/
+dist/
+*.tgz
+*.log
+.DS_Store
+
+# Local credentials / config — never commit
+.env
+.env.*
+*.key
+auth.json
+models.json
+web-search.json
+provider-keys.json
+
+# Harness data
+data/
+node_modules/.cache/
