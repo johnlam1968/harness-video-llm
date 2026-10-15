@@ -130,6 +130,13 @@ frames, and the model's memory of the video is bounded by which frames those wer
 therefore a *retention* parameter, not only a fidelity one — and, as noted, the one dial no
 harness in our survey sets.
 
+**But retention is not comprehension, and the two must not be conflated.** MotionBlind
+(arXiv:2609.09528) reports that *"neither more frames nor smarter frame selection closes the gap,
+because these change which frames are seen, not whether motion is read."* A video held at higher
+`fps` across every turn is still a video the model may mis-read temporally. Raising `fps` is a
+cost-and-fidelity decision; it is not a fix for the temporal-reasoning gap and should never be
+presented as one.
+
 ### 4.3 Loss is silent, and it is a known class of bug
 
 | case | what happens |

@@ -50,7 +50,7 @@ delegates to the model, each makes the omission visible, none samples frames its
 
 ---
 
-## 3. The ladder: five tiers of media understanding in an agent
+## 3. The ladder: six tiers of media understanding in an agent
 
 Not all media understanding is equal, and most confusion in this area is tier confusion. Every real
 system sits on one of these, and they differ in cost, state and failure mode more than in accuracy.
@@ -261,21 +261,124 @@ turn by turn, is in the research tier — which is the honest reason video input
 
 ---
 
-## 8. ⏳ Awaiting: world models and media capability seams
+## 8. World models, and the seam that is converging
 
-One survey is still in flight, covering whether "video understanding" is subsumed by, or
-complementary to, world models (Genie / Cosmos / JEPA), and whether any harness or framework
-already exposes media understanding as an explicit, per-model-gated capability seam.
+*(Surveyed 2026-10-15 against primary sources. Full report: `media-world-models-report.md`.)*
 
-Its conclusions matter here: if a harness-level media seam is converging on a standard, this repo
-should align to it; if world models change what "understanding a video" means, the T3/T4 boundary in
-§3 is where it shifts.
+### 8.1 The generative/predictive split is now settled vocabulary
+
+Five 2025–26 surveys draw the line explicitly, so "world model" is no longer one thing:
+
+| half | predicts | examples (2026 status, verified) |
+|---|---|---|
+| **generative / observation-space** | pixels — a scene *producer* | Genie 3 (research preview, Ultra-only, "consistency for a few minutes"); NVIDIA Cosmos 3 (1 Jun 2026, `nvidia/cosmos`, NVIDIA Open Model License); World Labs Marble (**public API**, joining AMD); Decart Oasis 3 (**public API**, per-second billing); Odyssey-3 (public API) |
+| **predictive / representation-space** | a latent future state — a scene *model* | **V-JEPA 2 / 2.1** — open weights, **MIT**, 80M–2B params at 384px, on HuggingFace and torch.hub (2.1, 2026-03-16) |
+
+V-JEPA 2 changes the answer to "is JEPA still a research artifact": **no — it is a real,
+downloadable, permissively-licensed encoder.** But it has **no generative decoder and no text
+interface**, so you supply your own alignment head. Its own paper concedes the weakness that 2.1's
+dense predictive loss fixes (ADE20K 22.2 → 47.9 mIoU).
+
+**For an agent that watches video, the generative half is useless.** Cosmos, Genie and Marble
+generate; none has an analysis path. The only Cosmos component usable for understanding is
+**Cosmos-Reason**, which is a VLM — i.e. back on the perception side.
+
+*Integrity flag, worth repeating:* Runway's GWM Worlds 2 publications page carries a "Read Paper"
+button that resolves to a **different** paper, and arXiv has **zero** results for "GWM Worlds 2".
+There is no technical report to cite. Their own page concedes "Long-term memory is also imperfect"
+— a sliding KV cache evicting older frames, which is §4's failure mode by design.
+
+### 8.2 Is video understanding subsumed by world modeling? No — and there is a sharper answer
+
+No primary source argues subsumption. The useful evidence cuts the other way, and it lands on this
+repo's question:
+
+- **MotionBlind** (arXiv:2609.09528) is the direct answer to "would more frames fix it?" —
+  *"Neither more frames nor smarter frame selection closes the gap, because these change which
+  frames are seen, not whether motion is read."*
+- **CausalVQA**: VLMs answer *"what happened"* and collapse on *"what could have happened"*
+  (Gemini 2.5 Flash 61.66% against 85–95% for humans). That is the generative/predictive divide
+  showing up as an empirical gap.
+- **Video-MME-v2** (arXiv:2604.05015) calls the benchmark *"increasingly saturated, exposing a
+  critical discrepancy between inflated leaderboard scores and real-world model capabilities"* —
+  a caution that applies to our own evidence base in
+  [`multimodal-use-cases-and-coding-value.md`](multimodal-use-cases-and-coding-value.md).
+
+**This qualifies the `fps` claim.** Our notes treat `fps` as the cost-control lever no harness
+sets, which stands — but per MotionBlind, raising it buys **cost**, not motion understanding. The
+narrower reading is: `fps` is a **fidelity/cost dial**, and the frames it selects are not where the
+motion gap lives.
+
+### 8.3 Where a predictive model does beat every VLM: transitions
+
+**LGWM** (arXiv:2610.11942) is the exception, and it is GUI-specific:
+
+> "for GUI agents, safety is a property of the transition rather than of the screen"
+
+Prompted VLMs are near chance on RSWT-BENCH where a JEPA-style predictor reaches **0.987 AUC**.
+CUA-Suite separately argues 30 fps screen recordings are a superset over screenshot abstractions —
+and still reports **~60% failure** on desktop apps. So for *coding* agents the immediate relevance
+is a transition / next-state check, not video comprehension.
+
+### 8.4 The seam is converging — and it is `text | image`
+
+Five independent stacks landed on the same primitive: a **per-model input-modality declaration**.
+
+| system | the declaration | quality of the gate |
+|---|---|---|
+| **DSH** | `PiAiModelProfile.input?: PiAiModality[]` | **also gates at tool execution** — the only one that does |
+| OpenRouter | `InputModality = "text" \| "image" \| "file" \| "audio" \| "video"` | expressive; almost never populated |
+| LiteLLM | `supports_vision` / `supports_video_input` / `supported_modalities` | **99 of 4,159** models declare video input |
+| MCP | `TextContent \| ImageContent \| AudioContent \| ResourceLink \| EmbeddedResource` | **no video type at all** |
+| OpenAI Agents SDK | media is input, never a tool | tool-returned images silently dropped on the Chat Completions backend without `preserve_tool_output_all_content=True` |
+
+DSH is the reference implementation of the thing worth copying, and it is already in our target —
+`packages/llm/llm-pi-ai/src/catalog.ts:618`:
+
+> "Declaring images is what makes a hand-declared vision model usable… **This is a claim about the
+> endpoint, not a check of it**: nothing interrogates a gateway for what it accepts, so a model
+> claiming images its endpoint refuses is refused by the provider instead, mid-turn."
+
+That sentence, in DSH's own source, is this repository's thesis in the harness's voice: a modality
+declaration is an **assertion**, and a wrong one fails late and at the provider rather than at a
+gate. It is why the silent drop matters, and why the fix for video is a *checked* gate rather than
+another declaration.
+
+And the gate shape already exists, for images, in `docs/tool-catalog.md`:
+
+> "The image tool is not registered without `ctx.attachments`; its schema is route-independent, and
+> **execution refuses unless the exact routed model declares image input**."
+
+Schema without a gate is what produced #5837 / #5367 / #6049. A schema **plus** an execution gate is
+what a video tool should copy.
+
+### 8.5 The proposal this converges on
+
+Not "add a world model to the harness", and not "add video to the modality list". Two separable
+declarations, gated the way `read_image` already gates input:
+
+1. **`video` as an input modality** — populated on routes that genuinely take it (GLM-4.6V,
+   Kimi K3, Gemini, MiniMax M3), with the tool-schema **plus** execution-gate pair rather than a
+   declaration alone.
+2. **A `predict` modality alongside `input`** — a distinct capability ("this route can predict a
+   next state or verify a transition"), per-model, initially empty. Every verified world-model win
+   is action- or transition-conditioned (LeCun's own test, CausalVQA, MotionBlind, LGWM), so this
+   is where the capability belongs — and declaring it per model is what keeps it honest, because
+   the generative half cannot do it and would otherwise be indistinguishable from the predictive
+   half in a config file.
+
+Both are merge-extensible vocabulary, which is the shape DSH already uses. Neither requires
+touching the loop.
+
 
 ## 9. References in this repo
 
 - [`docs/multimodal-use-cases-and-coding-value.md`](multimodal-use-cases-and-coding-value.md) — what video-capable models are for; the coding-value evidence review
-- [`docs/video-retention-mechanism.md`](video-retention-mechanism.md) — what "the model keeps the understanding" means (it does not; the frames are context tokens)
+- [`docs/video-retention-mechanism.md`](video-retention-mechanism.md) — what "the model keeps the understanding" means (it does not; the frames are context tokens), and the third pattern: understanding as a text artifact
+- [`docs/media-world-models-report.md`](media-world-models-report.md) — the full world-model survey behind §8: generative vs predictive, V-JEPA 2's licence and limits, and the five capability seams compared
 - [`docs/dsh-video-discussion-landscape.md`](dsh-video-discussion-landscape.md) — the four video asks in the DSH repo and the declaration-surface gap
 - [`docs/video-product-harness-survey.md`](video-product-harness-survey.md) — video products tiered by whether an LLM reasons over footage
 - [`docs/evidence.md`](evidence.md) — the reproducible measurements the rest rests on
 - `system1-runtime-repo/docs/DECISION_MODEL_RESEARCH.md:99` — the decision model is text-only
+- `deepseek-harness packages/llm/llm-pi-ai/src/catalog.ts:618` — "a claim about the endpoint, not a check of it"
+- `deepseek-harness docs/tool-catalog.md` — the `read_image` execution gate, the shape to copy for video

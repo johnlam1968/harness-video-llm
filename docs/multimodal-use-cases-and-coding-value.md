@@ -66,6 +66,12 @@ audio track is consumed or ignored.
 `fps` is the underused lever: it is the one client-side dial for the cost/latency/fidelity
 trade-off, and no harness in our survey exposes it (see §3.5).
 
+**Qualified 2026-10-15.** `fps` buys **cost and fidelity, not motion understanding.** MotionBlind
+(arXiv:2609.09528) is explicit: *"Neither more frames nor smarter frame selection closes the gap,
+because these change which frames are seen, not whether motion is read."* So this dial is worth
+exposing as a **cost** control, and should not be sold as the fix for temporal reasoning. See
+[`media-understanding-as-a-capability-seam.md`](media-understanding-as-a-capability-seam.md) §8.2.
+
 ### 1.3 Where the use cases actually are
 
 Grouped by what the evidence supports, strongest first.
