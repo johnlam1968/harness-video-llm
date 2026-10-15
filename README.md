@@ -35,7 +35,7 @@ Started 2026-10-14.
 | Coding-value evidence review | ✅ complete — in the multimodal note |
 | Retention-mechanism review (what "keeping the understanding" means) | ✅ complete — [`docs/video-retention-mechanism.md`](docs/video-retention-mechanism.md) |
 | Video product / harness landscape | ✅ complete — [`docs/video-product-harness-survey.md`](docs/video-product-harness-survey.md) |
-| Reply to [deepseek-harness #9647](https://github.com/deepseek-ai/deepseek-harness/discussions/9647) | 📝 drafted, not posted — [`docs/dsh-discussion-9647-reply.md`](docs/dsh-discussion-9647-reply.md) |
+| Reply to [deepseek-harness #9647](https://github.com/deepseek-ai/deepseek-harness/discussions/9647) | ✅ **posted 2026-10-15** — [comment](https://github.com/deepseek-ai/deepseek-harness/discussions/9647#discussioncomment-18953220) |
 | Upstream issues to `earendil-works/pi` | 📝 drafted, **awaiting review** — [`docs/issues/`](docs/issues/) |
 | Extension implementation | ⬜ not started — [`PLAN.md`](PLAN.md) |
 | `pi2dsh` delivery to DSH | ⚠️ version gap, unverified — [`PLAN.md` §5](PLAN.md#5-delivery-to-dsh-via-pi2dsh) |

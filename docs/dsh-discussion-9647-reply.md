@@ -1,4 +1,9 @@
-# Reply draft — deepseek-harness Discussion #9647
+# Reply — deepseek-harness Discussion #9647
+
+**Status: POSTED 2026-10-15T16:18:54Z** —
+<https://github.com/deepseek-ai/deepseek-harness/discussions/9647#discussioncomment-18953220>
+(comment `DC_kwDOT3T1g84BITQE`, 15,157 characters). The comment body is everything below the
+first `---`; the provenance block above it was never posted.
 
 **Provenance (not part of the comment).**
 
@@ -26,7 +31,8 @@ Before my own answer: video has been requested in this repo four times —
 [#4725](https://github.com/deepseek-ai/deepseek-harness/discussions/4725) (2026-08-27),
 [#6050](https://github.com/deepseek-ai/deepseek-harness/discussions/6050) from a user whose use
 cases are lecture recordings, meeting minutes and accessibility (2026-09-09), this one, and
-[#9729](https://github.com/deepseek-ai/deepseek-harness/discussions/9729) yesterday, asking for
+[#9729](https://github.com/deepseek-ai/deepseek-harness/discussions/9729) (2026-10-15, i.e. the
+day after this one), asking for
 essentially the same `VideoBlock` this post proposed. Credit where it is due — @Start-Ten's thread
 argues from a person rather than from a capability table, and it deserves the same weight.
 
