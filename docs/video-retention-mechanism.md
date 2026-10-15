@@ -179,7 +179,84 @@ understanding, because there is none to evidence.
 
 ---
 
-## 6. Corrections this review forced on our own notes
+## 6. The third pattern: understanding as a *text artifact*
+
+The two mechanisms above are both "the video is in the request". There is a third, and MiniMax
+ships it — which is useful because it makes the trade-off visible in one API.
+
+### 6.1 H3-Context-IR: video in, structured text out
+
+`POST /v2/h3_context_ir`, documented at
+`platform.minimax.io/docs/api-reference/video-generation-v2-h3-context-ir`. The endpoint's own
+summary:
+
+> "Deeply interpret multimodal context and generate a structured, semantically enriched video
+> prompt."
+
+Its input is `text` + optional `image_url` / **`video_url`** (`role=reference_video`) /
+`audio_url`, with reference video capped at **3 clips, ≤50 MB each, 2–15 s per clip, ≤15 s total**.
+Its output is an async task whose success payload carries `content.prompt` — and in the worked
+example, that prompt is a long structured description:
+
+```
+integrated_multimodal_description: [Shot 1] Cinematic, wide shot with a slow push in …
+[Shot 2] At 00:02.800, the camera cuts to a medium close-up … sudden, blinding flash …
+overall_soundscape: Deep, resonant low-frequency thrumming of ship engines …
+non_diegetic_music: Symphonic orchestral score, beginning with a slow, rising brass and string
+crescendo that abruptly cuts off …
+```
+
+The doc's own warning is the whole point:
+
+> "This endpoint **only returns an enhanced prompt**. It does not create a video generation task."
+
+and:
+
+> "H3-Context-IR is a complex system and its implementation is **not open sourced**."
+
+**So the user's read is correct, with three refinements:**
+
+1. **It is genuinely one-shot.** Video in, a text artifact out, nothing retained. There is no
+   context to lose, no compaction to survive, no cache to expire — because the video never enters
+   a conversation at all.
+2. **It is not H3 doing the understanding.** The request carries `model: MiniMax-H3`, and the
+   endpoint sits inside the *video generation v2* family, so it is coupled to H3 — but the doc is
+   explicit that it does **not** create a generation task. H3-Context-IR is a separate, closed
+   system whose output is *a prompt for* H3. The understanding and the generator are distinct.
+3. **H3 itself is a video *generation* model**, not a perception model: `MiniMax-AI/MiniMax-H3`
+   (★9,990, created 2026-07-30, **no repo licence declared**) ships "Prompt Writing Skill" plus
+   eight style-specific *video generation* skills, and points at the video-generation API. Its
+   HuggingFace badge links a separate licence. So "pure video models" at MiniMax are on the
+   **generative** side — which is the world-model family, not the perception side.
+
+### 6.2 The temporal grounding is the interesting part
+
+Notice the timestamps: `At 00:02.800, the camera cuts to …`. The description is not a generic
+caption — it is **time-anchored**. That is what makes a text artifact usable for anything temporal:
+a prompt, an index entry, a chapter list, a searchable summary. It also shows what is lost when
+understanding is flattened to text — the *model* no longer has the frames, only whoever reads the
+text next.
+
+### 6.3 The three mechanisms side by side
+
+| | native tokens (M3 chat) | text artifact (H3-Context-IR) | frames → VLM (sampler) |
+|---|---|---|---|
+| what carries the understanding | the context window | a prompt string | a tool result |
+| retained for later turns | **yes** — until compaction | **no** | only as text, in the log |
+| cost per re-use | re-read (cached cheaply) | **re-pay per call** | re-sample |
+| failure mode | dropped at compaction; exceeds context | silently lossy; re-derived each call | agent cannot reference what it never sampled |
+| best for | conversation *about* a video | prompting, indexing, cataloguing | inspection with tools |
+
+**The choice is driven by one question: does the video need to stay referenceable in a
+conversation?** If yes, only context-resident tokens do it. If no — if you want a description, a
+prompt, or a category — a one-shot text artifact is *cheaper, safer and stateless*, and it removes
+every retention problem in §4 from the design space entirely.
+
+That is the sharpest form of the answer to the original claim: "keeping the understanding" is
+sometimes literally true (context-resident), sometimes an accident of the API's statelessness
+(re-sending), and sometimes replaced by a text artifact that no longer holds the video at all.
+
+## 7. Corrections this review forced on our own notes
 
 1. **We mislabelled an arXiv reference.** The M3 model card links `arXiv:2606.13392` as "the
    technical report". That paper is **"MiniMax Sparse Attention"** (Lai et al., 11 Jun 2026) — a

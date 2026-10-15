@@ -60,17 +60,30 @@ system sits on one of these, and they differ in cost, state and failure mode mor
 | **T0 — metadata** | filename, mime, duration, size, EXIF | harness / filesystem | ~free | request | wrong metadata misleads triage |
 | **T1 — text extraction** | ASR transcript, OCR text, subtitle track | **external service** (`dsh-speech-funasr-http`, SenseVoice) | seconds, local, cheap | becomes text in the context | silent partial transcript reads as complete |
 | **T2 — sampled frames → VLM call** | ffmpeg scene sampling → VLM, agent calls it as a tool | **tool/plugin** (`dsh-video-lens`, `video-use`) | ~15 screenshots-equivalent per clip | tool result in the log | agent cannot reference what it never sampled |
+| **T2b — vendor perception service** | whole video in, **structured text out**, stateless | **vendor endpoint** (MiniMax `H3-Context-IR`) | per call, re-paid | a text artifact; **the video is never resident** | lossy by design; re-derived every call |
 | **T3 — native media tokens** | video enters the chat model's context | **model** (`{type:'video'}`, fps-sampled) | high, in-context | the context window — and nowhere else | dropped at compaction (DSH today) |
-| **T4 — persistent representation** | learned state of the scene/world | **world model** | research-stage | a learned space | not shipping; see ⏳ |
+| **T4 — persistent representation** | learned state of the scene/world | **world model** | research-stage | a learned space | not shipping; see §8 |
+
+**T2b deserves its own line** because it is the one tier where the video never enters the
+conversation at all: MiniMax's `POST /v2/h3_context_ir` takes reference video (≤3 clips, ≤15 s
+total) and returns a **time-anchored text artifact** — `integrated_multimodal_description: [Shot 2]
+At 00:02.800, the camera cuts to …`. The doc says it plainly: *"only returns an enhanced prompt.
+It does not create a video generation task"*, and the implementation is closed. For cataloguing,
+prompting and indexing this is **strictly better than T3**: cheaper per call, stateless, and it
+removes every retention failure in §4 from the design space. For a *conversation about* the video,
+it is useless, because the video is gone. See
+[`video-retention-mechanism.md`](video-retention-mechanism.md) §6 for the full comparison.
+
 
 **The single most useful thing in this table**: T1 and T2 are *already built* on this host —
-`dsh-speech-funasr-http` and `dsh-video-lens` respectively. T3 is what this repo is working on. T4 is
-the research horizon. The ladder is not a roadmap; it is the landscape most agents already occupy,
-usually without knowing which tier they are on.
+`dsh-speech-funasr-http` and `dsh-video-lens` respectively — and T2b is one API call away
+(MiniMax's `H3-Context-IR`). T3 is what this repo is working on. T4 is the research horizon. The
+ladder is not a roadmap; it is the landscape most agents already occupy, usually without knowing
+which tier they are on.
 
 ### 3.1 The division of labour that follows
 
-Most "video understanding" products are **T1 + T2**, and they work. The honest reading of the
+Most "video understanding" products are **T1 + T2** (or T2b where a vendor sells it), and they work. The honest reading of the
 product survey in [`video-product-harness-survey.md`](video-product-harness-survey.md) is that the
 practical video agent is a **triage-and-tool system**, not a perceptual one: a cheap stage
 (transcript, scene detection, metadata) decides whether and how to spend the expensive stage
