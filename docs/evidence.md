@@ -143,6 +143,31 @@ From `sst/models.dev` canonical records (`models/<lab>/<model>.toml`, `[modaliti
 | Zhipu | GLM-5.3 | `text` | ❌ |
 | DeepSeek | V4-Pro | `text` | ❌ (no multimodal) |
 
+**Attribution correction (2026-10-15).** An earlier draft of the harness comparison in the
+deepseek-harness Discussion #9647 post attributed the placeholder string
+
+```
+[Media omitted from provider request because the selected model does not support video input.]
+```
+
+to OpenClaw. **That string is ZCode's**, from `zai-org/zcode`
+`apps/zcode-cli/packages/contracts/src/model/media-policy.ts`:
+
+```ts
+return `${placeholder}\n[Media omitted from provider request because the selected model does not support ${unsupportedKind}.]`
+```
+
+OpenClaw's own visible-omission string is different — verified in `openclaw/openclaw`
+`packages/ai/src/provider-transcript-transform.ts:12`:
+
+```ts
+const VIDEO_OMISSION = "(video omitted: provider does not support video input)"
+```
+
+Both harnesses omit **visibly**, which was the substance of the claim and remains true; only the
+attribution was wrong. The ZCode placeholder is the better one to cite, because it is templated
+over a typed reason — `UnsupportedModelInputMediaKind = "image input" | "PDF input" | "video input"`.
+
 Confirmed directly against vendor docs:
 
 - **Anthropic** — `platform.claude.com/docs/en/build-with-claude/vision` documents only
@@ -215,8 +240,8 @@ None of these delivers native video to a chat model. They are all bridges and sa
 
 | repo | item | state |
 |---|---|---|
-| `earendil-works/pi` | [#8886](https://github.com/earendil-works/pi/issues/8886) Add first-class video input support | closed `not_planned` **after 14 minutes**, label `no-action` |
-| `earendil-works/pi` | [#7326](https://github.com/earendil-works/pi/issues/7326) fix(ai): preserve MiniMax M3 video input capability | closed 2026-07-30, unmerged |
+| `earendil-works/pi` | [#8886](https://github.com/earendil-works/pi/issues/8886) Add first-class video input support | closed `not_planned` **9 seconds after opening**, label `no-action` |
+| `earendil-works/pi` | [#7326](https://github.com/earendil-works/pi/issues/7326) fix(ai): preserve MiniMax M3 video input capability | closed **7 seconds** after opening, 2026-07-30, unmerged |
 | `earendil-works/pi` | [#3200](https://github.com/earendil-works/pi/issues/3200) Support video/audio content in prompt command | **open** |
 | `deepseek-harness` | [#4725](https://github.com/deepseek-ai/deepseek-harness/discussions/4725) support pdf/video passthrough | open, unanswered since 2026-08-27 |
 
