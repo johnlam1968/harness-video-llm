@@ -235,3 +235,18 @@ have sat unanswered for six weeks. I will post the plugin with the `dsh-plugin` 
 and I would rather be told it is already planned. If the two walls are better addressed separately,
 I am happy to split this: the declaration chain in #5837 is not specific to video and does not need
 me in it.
+
+Everything above is measured and sourced in a public repository — the harness landscape, the
+discussion map, and the correction to my own table. Please read it rather than take the numbers on
+trust, and correct anything that does not reproduce:
+
+**<https://github.com/johnlam1968/harness-video-llm>**
+
+Two caveats I would rather state than be caught on. First, the evidence that the *model* reads
+video is a direct HTTP probe, not a harness run — the harness half of the claim is not yet
+demonstrated, and that gap is what the repository is about. Second, the durable-replay half is
+weaker than the request half and deserves scepticism: DSH's compaction seam keeps only text blocks
+(`packages/compaction/compaction-basic/src/summarizer.ts:220`) and its offload plugin handles only
+`block.type === 'image'`, so a video block would be dropped at the first compaction with no
+placeholder and no warning. Whatever gets built, that is the part that has to be right — and it is
+the part none of the four existing implementations emphasises.
