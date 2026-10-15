@@ -33,6 +33,8 @@ Started 2026-10-14.
 | Harness landscape (13 harnesses + 4 with native video) | ✅ complete — [`docs/multimodal-use-cases-and-coding-value.md`](docs/multimodal-use-cases-and-coding-value.md) |
 | DSH discussion landscape (4 video asks, declaration-surface gap) | ✅ complete — [`docs/dsh-video-discussion-landscape.md`](docs/dsh-video-discussion-landscape.md) |
 | Coding-value evidence review | ✅ complete — in the multimodal note |
+| Retention-mechanism review (what "keeping the understanding" means) | ✅ complete — [`docs/video-retention-mechanism.md`](docs/video-retention-mechanism.md) |
+| Video product / harness landscape | ✅ complete — [`docs/video-product-harness-survey.md`](docs/video-product-harness-survey.md) |
 | Reply to [deepseek-harness #9647](https://github.com/deepseek-ai/deepseek-harness/discussions/9647) | 📝 drafted, not posted — [`docs/dsh-discussion-9647-reply.md`](docs/dsh-discussion-9647-reply.md) |
 | Upstream issues to `earendil-works/pi` | 📝 drafted, **awaiting review** — [`docs/issues/`](docs/issues/) |
 | Extension implementation | ⬜ not started — [`PLAN.md`](PLAN.md) |
@@ -117,6 +119,12 @@ of DSH's native services.
 - [`docs/dsh-video-discussion-landscape.md`](docs/dsh-video-discussion-landscape.md) — every
   video/modality thread in the DSH repo: four video asks, and the declaration-surface gap
   (#5837, #5367, #6049, #8870) that sits beneath the vocabulary
+- [`docs/video-retention-mechanism.md`](docs/video-retention-mechanism.md) — **what "the model
+  keeps the video's understanding" actually means**: it does not; the frames stay in the context
+  window as tokens, and three consequences follow (budget, sampling policy, silent loss)
+- [`docs/video-product-harness-survey.md`](docs/video-product-harness-survey.md) — the video
+  *product* landscape, tiered by whether an LLM reasons over footage, and what harness runs
+  underneath each
 - [`docs/issues/`](docs/issues/) — two drafted upstream issues, not yet posted
 
 ## Four harnesses already ship native video

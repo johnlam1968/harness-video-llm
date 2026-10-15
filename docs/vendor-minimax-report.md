@@ -81,7 +81,13 @@ Other MiniMax repos: `MiniMax-AI/cli` (TypeScript, mmx-cli), `MiniMax-Coding-Pla
 | SWE-bench Pro | 59.0 |
 | Claw-Eval | 74.5 |
 
-Caveat: those numbers were transcribed from an **image** (`figures/benchmark.jpeg`), not a machine-readable table, and the YAML itself notes variant ambiguity. **Video-MMMU, MLVU and LongVideoBench: not found in public sources.** Technical report: arXiv:2606.13392 (video eval tables inside not verified here).
+Caveat: those numbers were transcribed from an **image** (`figures/benchmark.jpeg`), not a machine-readable table, and the YAML itself notes variant ambiguity. **Video-MMMU, MLVU and LongVideoBench: not found in public sources.**
+
+**Correction (2026-10-15):** the M3 model card links arXiv:2606.13392 as "the technical report", but
+that paper is **"MiniMax Sparse Attention"** (Lai et al., 11 Jun 2026) — a blockwise sparse-attention
+operator evaluated on a 109B natively multimodal model, which does **not** describe M3's vision
+stack. **There is no M3 technical report covering video tokenisation or retention**, so no such
+evidence exists to check. See [`video-retention-mechanism.md`](video-retention-mechanism.md).
 
 **[V]** The Anthropic Messages OpenAPI ships a **"Video Understanding"** worked example (`MiniMax-M3.1-Flash-Preview`, `thinking: adaptive`, `output_config.effort: max`, `type:"video"` with a public `.mp4` URL). The M3 model card states "M3 undergoes mixed-modality training from the very first step, enabling deeper semantic fusion across text, image, and video" and is tagged `image-text-to-text` + `video`.
 
