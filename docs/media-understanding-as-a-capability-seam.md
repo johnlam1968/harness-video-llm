@@ -162,27 +162,107 @@ Two conclusions, one uncomfortable:
 
 ---
 
-## 7. ⏳ Awaiting the external surveys
+## 7. Platform scale: what YouTube actually shows, and the real indexing stack
 
-Two surveys are in flight and their findings will be added here:
+*(Surveyed 2026-10-15. Marked VERIFIED where a primary source was fetched.)*
 
-- **Platform-scale video understanding (YouTube, video cataloguing services and OSS indexers)** —
-  what the large-scale systems actually do, whether video understanding is a commodity or a research
-  problem, and what a realistic cataloguing stack looks like today.
-- **World models and media capability seams** — whether "video understanding" is subsumed by, or
-  complementary to, world models (Genie/Cosmos/JEPA), and whether any harness or framework already
-  exposes media understanding as an explicit, per-model-gated capability seam.
+### 7.1 YouTube's video understanding is real, and its architecture is private
 
-Their conclusions matter here: if a harness-level media seam is converging on a standard, this repo
-should align to it; if world models change what "understanding a video" means, the T3/T4 boundary in
-§3 is the place that shifts.
+The instinct that "YouTube must have an underlying video model" is **correct**, and YouTube's own
+shipped features prove it — each one is impossible without per-video understanding of frames and
+audio:
+
+| shipped feature | date | what it proves | model credited |
+|---|---|---|---|
+| [Auto dubbing](https://blog.youtube/news-and-events/auto-dubbing-on-youtube/) | 2024-12-10 | per-video audio → text → translated speech | Google DeepMind + Google Translate (stated) |
+| [Expressive Speech](https://blog.youtube/news-and-events/youtube-auto-dubbing-expressive-speech/) | 2026-02-04 | prosody/emotion modelling; 27 languages; **6M+ daily viewers** watching ≥10 min of dubbed content | not stated |
+| Automatic Smart Filtering | 2026-02 | **video-level** classification deciding when *not* to dub (music, silent vlogs) | not stated |
+| [Ask YouTube](https://blog.youtube/news-and-events/youtube-news-google-io-2026/) | 2026-05-19 | conversational retrieval "across **all of YouTube's catalogue**", long-form and Shorts, with follow-up turns | not stated |
+| Gemini Omni (Shorts Remix) | 2026-05 | video **and** audio manipulation | Gemini (stated) |
+
+**But the architecture is not public.** The canonical Google Research publication is *Deep Neural
+Networks for YouTube Recommendations* (2016) — a recommendation model, not a video-understanding
+one. No Google Research page describes the current video stack, its scale, or its latency budget.
+So the honest reading is: **YouTube's advantage is the corpus, the human labels and the serving
+budget, not a publicly better video model.** It publishes outcomes and never architectures.
+
+**Why this matters for a harness.** Ask YouTube is the interesting one: conversational retrieval
+over an entire video corpus, with follow-up turns. That is the *platform* version of the capability
+this repo is arguing a coding harness should have — and it is shipped, to Premium users, which sets
+the bar rather than settling the question.
+
+### 7.2 The realistic "scan and categorize a library" stack
+
+Assembled from what is actually usable today, with prices where a primary source gave one:
+
+```
+ffprobe  →  ffmpeg scene-cut detection  →  faster-whisper (ASR)
+        →  CLIP/SigLIP2 frame sampling  →  embeddings  →  vector DB
+        →  one VLM pass per video (Qwen3-VL-8B) for a summary + category labels
+```
+
+- **faster-whisper** (MIT) — **13 minutes of audio transcribed in 16 s on a single RTX 3070 Ti**
+  (int8, batch 8), ≈48× realtime. This is the tier that makes everything downstream affordable.
+- **Qwen3-VL** (**Apache-2.0, verified**) — 2B→235B, hours-long video, 256K→1M context,
+  timestamp-grounded localisation. The strongest permissively-licensed candidate, and the one any
+  self-hosted stack should start from.
+
+**Managed alternatives.** AWS Rekognition does labels, faces, people-pathing, celebrities,
+moderation and segments — **no embeddings** — at **$0.10/min** for archived video and **$0.05/min**
+for shot detection (official AWS pricing). Azure Video Indexer runs 30+ models and returns an
+insights document, also without embeddings. **Twelve Labs is the only managed service verified to
+return video embeddings**, billed in tokens plus storage rather than per-minute, so library-scale
+cost is harder to forecast. (Google Video Intelligence and Azure pricing could not be retrieved —
+404s — so no claim is made about either.)
+
+**Conclusion that lands on §3:** this stack contains **no native video tokens anywhere**. Cataloguing
+at scale is T0+T1+T2 with one VLM pass per video, and T3 — handing the video to the chat model —
+is absent from it. That is strong independent evidence for the ladder: the honest production
+answer to "scan and categorize video" never needs native video input.
+
+### 7.3 The trap worth warning people about: model licences ≠ repo licences
+
+| project | repo licence | model licence |
+|---|---|---|
+| **VideoLLaMA3** | Apache-2.0 badge | **"research preview intended for non-commercial use ONLY"** (verified in its own README, sitting directly beneath the Apache badge) |
+| **TimeChat** | permissive-looking | **non-commercial research preview**; 8×V100 to train |
+| VideoChat2 / VideoChat3 | research | QA/caption output only — **no vector output, so not an indexer** |
+
+Verified directly: `DAMO-NLP-SG/VideoLLaMA3` carries an Apache 2.0 badge and, three lines below,
+"subject to the model Licenses of Qwen, Terms of Use of the data generated by OpenAI and Gemini".
+**Always check the model licence, never the repository's.** For anything we might publish or build
+on, that single check is the difference between a usable dependency and a legal problem.
+
+### 7.4 The tier boundary, restated with the evidence
+
+§3 argued that T3 is the last tier to reach for. The survey confirms it from the opposite
+direction: labels, shots, transcript and moderation are **solved commodity** at $0.05–0.10/min,
+while open-ended video *semantics* ("what is this video actually about") is **still frontier work**
+— a 4B video model in July 2026 is only just overtaking a general VL model of similar size.
+
+So the division is not cost alone. It is that **closed-set labelling and retrieval are commodities,
+and open-ended understanding is not.** A harness that needs to *know what is in* a video is in the
+commodity tier and should use T1/T2. A harness that needs to *reason about* a video with the user,
+turn by turn, is in the research tier — which is the honest reason video input is worth having
+*and* worth being careful about.
 
 ---
 
-## 8. References in this repo
+## 8. ⏳ Awaiting: world models and media capability seams
+
+One survey is still in flight, covering whether "video understanding" is subsumed by, or
+complementary to, world models (Genie / Cosmos / JEPA), and whether any harness or framework
+already exposes media understanding as an explicit, per-model-gated capability seam.
+
+Its conclusions matter here: if a harness-level media seam is converging on a standard, this repo
+should align to it; if world models change what "understanding a video" means, the T3/T4 boundary in
+§3 is where it shifts.
+
+## 9. References in this repo
 
 - [`docs/multimodal-use-cases-and-coding-value.md`](multimodal-use-cases-and-coding-value.md) — what video-capable models are for; the coding-value evidence review
 - [`docs/video-retention-mechanism.md`](video-retention-mechanism.md) — what "the model keeps the understanding" means (it does not; the frames are context tokens)
 - [`docs/dsh-video-discussion-landscape.md`](dsh-video-discussion-landscape.md) — the four video asks in the DSH repo and the declaration-surface gap
-- [`docs/video-product-harness-survey.md`](docs/video-product-harness-survey.md) — video products tiered by whether an LLM reasons over footage
+- [`docs/video-product-harness-survey.md`](video-product-harness-survey.md) — video products tiered by whether an LLM reasons over footage
+- [`docs/evidence.md`](evidence.md) — the reproducible measurements the rest rests on
 - `system1-runtime-repo/docs/DECISION_MODEL_RESEARCH.md:99` — the decision model is text-only

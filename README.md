@@ -125,6 +125,10 @@ of DSH's native services.
 - [`docs/video-product-harness-survey.md`](docs/video-product-harness-survey.md) — the video
   *product* landscape, tiered by whether an LLM reasons over footage, and what harness runs
   underneath each
+- [`docs/media-understanding-as-a-capability-seam.md`](docs/media-understanding-as-a-capability-seam.md)
+  — **the zoomed-out view**: a five-tier ladder of media understanding (metadata → text extraction →
+  sampled frames → native tokens → world model), what a harness should own versus delegate, what
+  YouTube's shipped features prove, and the real library-indexing stack
 - [`docs/issues/`](docs/issues/) — two drafted upstream issues, not yet posted
 
 ## Four harnesses already ship native video
